@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Analytics Dashboard</title>
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --card-bg: #252525;
+            --text-color: #a3a3a3;
+            --header-color: #ffffff;
+            --accent-color: #3ecf8e;
+            --border-color: #3a3a3a;
+            --chart-grid-color: rgba(255, 255, 255, 0.1);
+            --tooltip-bg: #333333;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px;
+            font-size: 0.9rem;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 48px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        h1 {
+            color: var(--header-color);
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        h2 {
+            color: var(--header-color);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        #loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5em;
+            color: var(--header-color);
+        }
+        .dashboard-container {
+            display: none; /* Hidden by default */
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+        .chart-card {
+            background: linear-gradient(140deg, #2c3e38, #252525);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 350px;
+            max-height: 350px;
+        }
+        .grid-col-span-2 {
+            grid-column: span 2;
+        }
+        @media (max-width: 860px) {
+             .grid-col-span-2 {
+                grid-column: span 1;
+            }
+        }
+
+        .chart-card > canvas, .chart-card > .table-container, .chart-card > .chart-error {
+            flex-grow: 1;
+        }
+         .table-container {
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+        th {
+            background-color: transparent;
+            font-weight: 600;
+            color: var(--header-color);
+            position: sticky;
+            top: 0;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        #restockFrequency table th:nth-child(2),
+        #restockFrequency table td:nth-child(2) {
+            text-align: center;
+        }
+        .table-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        .chart-error {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            padding: 20px;
+            background-color: rgba(201, 74, 74, 0.1);
+            border: 1px solid rgba(201, 74, 74, 0.5);
+            border-radius: 8px;
+            color: #f2b8b5;
+            text-align: center;
+        }
+        .chart-error p {
+            margin: 0;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <h1>Inventory Dashboard</h1>
+    </div>
+
+    <div id="loader">Loading Dashboard...</div>
+
+    <div id="dashboard" class="dashboard-container">
+        <div class="chart-card">
+            <h2>Inventory Status</h2>
+            <canvas id="inventoryStatusChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Upcoming Deliveries</h2>
+            <canvas id="upcomingDeliveriesChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Inventory by Location</h2>
+            <canvas id="inventoryByLocationChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Top 10 Most Stocked Products</h2>
+            <canvas id="top10MostStockedChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Top 5 Suppliers with Orders</h2>
+            <canvas id="top5SuppliersChart"></canvas>
+        </div>
+         <div class="chart-card">
+            <h2>Items to Reorder Now</h2>
+            <canvas id="itemsToReorderChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Inventory Status by Location</h2>
+            <canvas id="inventoryStatusByLocationChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Average Stock from Top Suppliers</h2>
+            <canvas id="avgItemsBySupplierChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Items without Delivery Dates</h2>
+            <canvas id="itemsWithoutDeliveryChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Product Restock Frequency</h2>
+            <div id="restockFrequency" class="table-container"></div>
+        </div>
+    </div>
+
+    <script type="module" src="index.tsx"></script>
+</body>
+</html>
