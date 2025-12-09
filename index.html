@@ -3,189 +3,776 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Analytics Dashboard</title>
+    <title>Shoplex | Supply Chain</title>
     <!-- Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #1e1e1e;
-            --card-bg: #252525;
-            --text-color: #a3a3a3;
-            --header-color: #ffffff;
-            --accent-color: #3ecf8e;
-            --border-color: #3a3a3a;
-            --chart-grid-color: rgba(255, 255, 255, 0.1);
-            --tooltip-bg: #333333;
+            /* Theme Variables */
+            --bg-color: #09090b; 
+            --header-bg: #09090b; /* Seamless header */
+            --card-bg: #121212;
+            --border-color: #27272a;
+            
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #52525b;
+            
+            --accent-color: #2dd4bf; 
+            --accent-hover: #14b8a6;
+            --info-color: #3b82f6;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --purple-color: #a855f7;
+
+            --input-bg: #18181b;
+            --hover-bg: #27272a;
+            
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
+
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --header-bg: #ffffff;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            
+            --accent-color: #0d9488;
+            --accent-hover: #0f766e;
+            --info-color: #2563eb;
+            --danger-color: #dc2626;
+            --warning-color: #d97706;
+            --purple-color: #7c3aed;
+
+            --input-bg: #f1f5f9;
+            --hover-bg: #f1f5f9;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--font-family);
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: var(--text-primary);
             margin: 0;
-            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- Header --- */
+        .app-header {
+            padding: 32px 48px 16px 48px;
+            display: flex;
+            align-items: flex-start; /* Align top to handle multiline text */
+            justify-content: space-between;
+            background-color: var(--header-bg);
+            flex-wrap: wrap;
+            gap: 32px;
+        }
+
+        .header-left {
+            display: flex;
+            gap: 48px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .branding {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .branding h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+        
+        .branding p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .main-nav {
+            display: flex;
+            gap: 8px;
+            background: var(--input-bg);
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .nav-item {
+            padding: 8px 16px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--card-bg); /* Slight lift */
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            font-weight: 600;
+        }
+        
+        /* Ensure light mode visibility for active nav */
+        [data-theme="light"] .nav-item.active {
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .search-container {
+            position: relative;
+            width: 280px;
+        }
+        
+        .search-icon {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: var(--text-secondary); pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            background-color: var(--input-bg);
+            border: 1px solid transparent;
+            color: var(--text-primary);
+            padding: 8px 12px 8px 36px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background-color: var(--card-bg);
+        }
+
+        .btn-icon {
+            background: none; border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer; padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-icon:hover { color: var(--text-primary); background-color: var(--hover-bg); border-color: var(--text-secondary); }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 24px 48px 48px 48px;
+            overflow-y: auto;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        
+        .stat-content-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+
+        .icon-emerald { background: rgba(45, 212, 191, 0.1); color: var(--accent-color); }
+        .icon-amber { background: rgba(245, 158, 11, 0.1); color: var(--warning-color); }
+        .icon-blue { background: rgba(59, 130, 246, 0.1); color: var(--info-color); }
+        .icon-purple { background: rgba(168, 85, 247, 0.1); color: var(--purple-color); }
+        
+        .stat-value { font-size: 1.8rem; font-weight: 600; margin: 4px 0 8px 0; color: var(--text-primary); line-height: 1.2; }
+        .stat-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
+        .stat-trend { font-size: 0.85rem; display: flex; align-items: center; gap: 4px; font-weight: 500; }
+        .trend-up { color: var(--accent-color); }
+        .trend-down { color: var(--danger-color); }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .chart-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex; flex-direction: column;
+            height: 400px; /* Fixed height for balanced look */
+            overflow: hidden;
+        }
+        .chart-header { margin-bottom: 16px; }
+        .chart-title { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+        .chart-subtitle { margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-secondary); }
+        .chart-container { flex-grow: 1; position: relative; width: 100%; overflow: hidden; }
+
+        .col-span-12 { grid-column: span 12; }
+        .col-span-6 { grid-column: span 6; }
+
+        @media (max-width: 1024px) { 
+            .col-span-6 { grid-column: span 12; }
+        }
+        @media (max-width: 900px) { 
+            .app-header { padding: 24px; flex-direction: column; align-items: stretch; gap: 24px; }
+            .header-left { flex-direction: column; align-items: flex-start; gap: 20px; }
+            .main-content { padding: 24px; }
+            .main-nav { width: 100%; overflow-x: auto; }
+            .nav-item { white-space: nowrap; }
+            .header-right { flex-direction: column; align-items: stretch; }
+            .search-container { width: 100%; }
+        }
+
+        /* --- Inventory Table --- */
+        .inventory-toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap; gap: 16px;
+        }
+        
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
             font-size: 0.9rem;
         }
-        .header-container {
+        .btn-primary { background-color: var(--accent-color); color: #000; border-color: transparent; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        
+        .btn-outline { background: transparent; border-color: var(--border-color); color: var(--text-primary); }
+        .btn-outline:hover { border-color: var(--text-secondary); background: var(--hover-bg); }
+        
+        .btn-danger-outline { background: transparent; border-color: var(--border-color); color: var(--danger-color); }
+        .btn-danger-outline:hover { border-color: var(--danger-color); background: rgba(239, 68, 68, 0.05); }
+
+        .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+
+        .table-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+        
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { padding: 14px 24px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        td { color: var(--text-primary); font-size: 0.9rem; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background-color: var(--hover-bg); }
+
+        /* --- Badges --- */
+        .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .badge-success { background: rgba(45, 181, 191, 0.1); color: var(--accent-color); }
+        .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning-color); }
+        .badge-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger-color); }
+        .badge-info { background: rgba(59, 130, 246, 0.1); color: var(--info-color); }
+
+        /* --- Reports Section --- */
+        .reports-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;
+        }
+        .report-card {
+            background-color: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 24px;
+            transition: transform 0.2s;
+            cursor: default;
+        }
+        .report-card:hover { transform: translateY(-4px); border-color: var(--accent-color); }
+        .report-icon { 
+            width: 48px; height: 48px; border-radius: 12px; 
+            background: var(--hover-bg); color: var(--accent-color);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 16px;
+        }
+        .report-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); }
+        .report-desc { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5; }
+
+        /* --- Modal & Toast --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { background: var(--card-bg); width: 100%; max-width: 500px; padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); transform: scale(0.95); transition: transform 0.2s; }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
+        .form-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); padding: 10px 12px; border-radius: 8px; color: var(--text-primary); transition: border-color 0.2s; }
+        .form-input:focus { border-color: var(--accent-color); outline: none; }
+        
+        .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; }
+
+        .toast-container { position: fixed; bottom: 32px; right: 32px; z-index: 2000; display: flex; flex-direction: column; gap: 12px; }
+        .toast { background: var(--card-bg); border: 1px solid var(--border-color); border-left: 4px solid var(--accent-color); padding: 16px 20px; border-radius: 8px; color: var(--text-primary); min-width: 300px; animation: slideIn 0.3s; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(100%); } }
+
+        /* List View */
+        .list-container { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            overflow-y: auto; 
+            gap: 8px; 
+            padding-right: 4px;
+        }
+        
+        .list-container::-webkit-scrollbar { width: 6px; }
+        .list-container::-webkit-scrollbar-track { background: transparent; }
+        .list-container::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 3px; }
+        .list-container::-webkit-scrollbar-thumb:hover { background-color: var(--text-secondary); }
+
+        .list-header { 
+            display: grid; 
+            align-items: center;
+            padding: 8px 16px; 
+            border-bottom: 1px solid var(--border-color); 
+            font-size: 0.75rem; 
+            color: var(--text-secondary); 
+            text-transform: uppercase; 
+            position: sticky; 
+            top: 0; 
+            background: var(--card-bg); 
+            z-index: 10; 
+            gap: 12px;
+        }
+        .list-item { 
+            display: grid; 
+            align-items: center;
+            padding: 12px 16px; 
+            background: var(--input-bg); 
+            border-radius: 6px; 
+            transition: all 0.2s; 
+            gap: 12px;
+        }
+        .list-item:hover { background: var(--hover-bg); }
+
+        /* Specific Grid Layouts - Fixed widths for numbers for perfect alignment */
+        .reorder-grid { grid-template-columns: minmax(180px, 3fr) 120px 120px minmax(120px, 2fr); }
+        .delivery-grid { grid-template-columns: minmax(180px, 3fr) minmax(150px, 2fr) 100px minmax(120px, 2fr); }
+
+        /* Pagination Styles */
+        .pagination-controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 48px;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        h1 {
-            color: var(--header-color);
-            margin: 0;
-            font-size: 2.5rem;
-            font-weight: 700;
-        }
-        h2 {
-            color: var(--header-color);
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-top: 0;
-            margin-bottom: 12px;
-            text-align: center;
-        }
-        #loader {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.5em;
-            color: var(--header-color);
-        }
-        .dashboard-container {
-            display: none; /* Hidden by default */
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 24px;
-        }
-        .chart-card {
-            background: linear-gradient(140deg, #2c3e38, #252525);
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 16px;
+            background: var(--card-bg);
             border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            height: 350px;
-            max-height: 350px;
         }
-        .grid-col-span-2 {
-            grid-column: span 2;
-        }
-        @media (max-width: 860px) {
-             .grid-col-span-2 {
-                grid-column: span 1;
-            }
-        }
+        .pagination-info { font-size: 0.9rem; color: var(--text-secondary); }
+        .pagination-buttons { display: flex; gap: 8px; }
 
-        .chart-card > canvas, .chart-card > .table-container, .chart-card > .chart-error {
-            flex-grow: 1;
-        }
-         .table-container {
-            overflow-y: auto;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none;  /* IE and Edge */
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 14px 18px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.85rem;
-        }
-        th {
-            background-color: transparent;
-            font-weight: 600;
-            color: var(--header-color);
-            position: sticky;
-            top: 0;
-        }
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-        #restockFrequency table th:nth-child(2),
-        #restockFrequency table td:nth-child(2) {
-            text-align: center;
-        }
-        .table-container::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
-        }
-        .chart-error {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 200px;
-            padding: 20px;
-            background-color: rgba(201, 74, 74, 0.1);
-            border: 1px solid rgba(201, 74, 74, 0.5);
-            border-radius: 8px;
-            color: #f2b8b5;
-            text-align: center;
-        }
-        .chart-error p {
-            margin: 0;
-            font-weight: 500;
-        }
     </style>
 </head>
 <body>
-    <div class="header-container">
-        <h1>Inventory Dashboard</h1>
+
+    <!-- Redesigned Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <div class="branding">
+                <h1>Inventory and Supply Chain</h1>
+                <p>Track stock movements, supplier orders, and product availability.</p>
+            </div>
+            
+            <nav class="main-nav">
+                <a href="#" class="nav-item active" data-target="overviewSection">Overview</a>
+                <a href="#" class="nav-item" data-target="inventorySection">Inventory Management</a>
+                <a href="#" class="nav-item" data-target="reportsSection">Reports</a>
+            </nav>
+        </div>
+
+        <div class="header-right">
+            <div class="search-container">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search products...">
+            </div>
+            
+            <button class="btn-icon" id="themeBtn" title="Toggle Theme">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+            <button class="btn-icon" onclick="window.refreshDashboard()" title="Refresh Data">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+             <div id="connectionStatus" class="badge badge-warning" style="display:none;"></div>
+        </div>
+    </header>
+
+    <!-- Main Views Area -->
+    <main class="main-content">
+        
+        <!-- OVERVIEW SECTION -->
+        <section id="overviewSection">
+            <div style="margin-bottom: 24px; font-size: 0.9rem; color: var(--text-secondary); display:flex; justify-content:flex-end;">Last updated: <span id="lastUpdatedTime" style="margin-left:6px;">-</span></div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <!-- Total Stock -->
+                <div class="stat-card">
+                    <div class="stat-content-wrapper">
+                        <div>
+                            <div class="stat-label">Total Stock</div>
+                            <div class="stat-value" id="statTotalStock">0</div>
+                        </div>
+                        <div class="stat-icon icon-blue">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        </div>
+                    </div>
+                    <div class="stat-trend trend-up"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg> +2.4%</div>
+                </div>
+
+                <!-- Low Stock -->
+                <div class="stat-card">
+                    <div class="stat-content-wrapper">
+                         <div>
+                             <div class="stat-label">Low/Out Stock Alerts</div>
+                             <div class="stat-value" id="statLowStock">0</div>
+                         </div>
+                         <div class="stat-icon icon-amber">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                         </div>
+                    </div>
+                    <div class="stat-trend trend-down">Action Required</div>
+                </div>
+
+                <!-- Pending Orders -->
+                <div class="stat-card">
+                    <div class="stat-content-wrapper">
+                         <div>
+                            <div class="stat-label">Pending Orders</div>
+                            <div class="stat-value" id="statIncoming">0</div>
+                         </div>
+                         <div class="stat-icon icon-emerald">
+                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                         </div>
+                    </div>
+                    <div class="stat-trend trend-up" style="color: var(--info-color);">Expected this week</div>
+                </div>
+
+                <!-- Total Value -->
+                <div class="stat-card">
+                    <div class="stat-content-wrapper">
+                        <div>
+                            <div class="stat-label">Total Inventory Value</div>
+                            <div class="stat-value" id="statValue">$0</div>
+                        </div>
+                        <div class="stat-icon icon-purple">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        </div>
+                    </div>
+                    <div class="stat-trend trend-up" style="color: var(--purple-color);">+5.1% growth</div>
+                </div>
+            </div>
+
+            <!-- Charts Grid: 2 Columns, 5 Rows = 10 Charts -->
+            <div class="charts-grid">
+                
+                <!-- Row 1: Immediate Actionable Status -->
+                <div class="chart-card col-span-6">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Inventory Status</h3>
+                        <p class="chart-subtitle">Distribution of stock across statuses</p>
+                    </div>
+                    <div class="chart-container"><canvas id="inventoryStatusChart"></canvas></div>
+                </div>
+                <div class="chart-card list-card col-span-6">
+                    <div class="chart-header">
+                         <h3 class="chart-title">Items to Reorder Now</h3>
+                         <p class="chart-subtitle">Products below minimum threshold</p>
+                    </div>
+                    <div class="chart-container">
+                        <div class="list-container">
+                            <div class="list-header reorder-grid">
+                                <span>Product</span><span style="text-align:center">Current Stock</span><span style="text-align:center">Reorder Level</span><span>Location</span>
+                            </div>
+                            <div id="itemsToReorderContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Location Data -->
+                <div class="chart-card col-span-6">
+                    <div class="chart-header">
+                         <h3 class="chart-title">Inventory by Location</h3>
+                         <p class="chart-subtitle">Stock distribution across storage zones</p>
+                    </div>
+                    <div class="chart-container"><canvas id="inventoryByLocationChart"></canvas></div>
+                </div>
+                <div class="chart-card col-span-6">
+                    <div class="chart-header">
+                         <h3 class="chart-title">Inventory Status by Location</h3>
+                         <p class="chart-subtitle">Health metrics per location</p>
+                    </div>
+                    <div class="chart-container"><canvas id="inventoryStatusByLocationChart"></canvas></div>
+                </div>
+
+                <!-- Row 3: Timeline & Delivery -->
+                <div class="chart-card col-span-6">
+                     <div class="chart-header">
+                         <h3 class="chart-title">Upcoming Delivery Dates</h3>
+                         <p class="chart-subtitle">Expected incoming stock over time</p>
+                     </div>
+                     <div class="chart-container"><canvas id="upcomingDeliveriesChart"></canvas></div>
+                </div>
+                <div class="chart-card col-span-6 list-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Items Without Delivery Dates</h3>
+                        <p class="chart-subtitle">Orders missing arrival estimates</p>
+                    </div>
+                    <div class="chart-container">
+                        <div class="list-container">
+                            <div class="list-header delivery-grid">
+                                <span>Product</span><span>Supplier</span><span style="text-align:center">Stock</span><span>Location</span>
+                            </div>
+                            <div id="noDeliveryDatesContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Volume Drivers -->
+                <div class="chart-card col-span-6">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Top 10 Most Stocked Products</h3>
+                        <p class="chart-subtitle">Highest volume inventory items</p>
+                    </div>
+                    <div class="chart-container"><canvas id="top10MostStockedChart"></canvas></div>
+                </div>
+                <div class="chart-card col-span-6">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Top 5 Suppliers with Orders</h3>
+                        <p class="chart-subtitle">Leading suppliers by volume</p>
+                    </div>
+                    <div class="chart-container"><canvas id="top5SuppliersChart"></canvas></div>
+                </div>
+                
+                <!-- Row 5: Performance Analysis -->
+                <div class="chart-card col-span-6">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Average Stock from Top Suppliers</h3>
+                        <p class="chart-subtitle">Typical holding levels by source</p>
+                    </div>
+                    <div class="chart-container"><canvas id="avgItemsBySupplierChart"></canvas></div>
+                </div>
+                <div class="chart-card col-span-6">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Product Restock Frequency</h3>
+                        <p class="chart-subtitle">Most frequently replenished items</p>
+                    </div>
+                    <div class="chart-container"><canvas id="restockFrequencyChart"></canvas></div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- INVENTORY SECTION -->
+        <section id="inventorySection" style="display: none;">
+            <div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-bottom: 24px;">
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-primary" onclick="window.openProductModal(null)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Add Product
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container" id="inventoryTableContainer">
+                <!-- Table rendered by JS -->
+            </div>
+            
+             <!-- Pagination Controls -->
+             <div class="pagination-controls" id="paginationControls" style="display:none;">
+                <div class="pagination-info" id="paginationInfo">Showing 1 to 100 of 0 results</div>
+                <div class="pagination-buttons">
+                    <button class="btn btn-outline btn-sm" id="btnPrevPage" disabled>Previous</button>
+                    <button class="btn btn-outline btn-sm" id="btnNextPage" disabled>Next</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- REPORTS SECTION -->
+        <section id="reportsSection" style="display: none;">
+            <div class="reports-grid">
+                <div class="report-card">
+                    <div class="report-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </div>
+                    <div class="report-title">Full Inventory Export</div>
+                    <div class="report-desc">Download a complete list of all products, stock levels, locations, and values in CSV format.</div>
+                    <button id="btnExportInventory" class="btn btn-outline" style="width:100%">Download CSV</button>
+                </div>
+
+                <div class="report-card">
+                    <div class="report-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                    <div class="report-title">Low Stock Alert Report</div>
+                    <div class="report-desc">Export a focused list of items that are below their reorder level or out of stock.</div>
+                    <button id="btnExportLowStock" class="btn btn-outline" style="width:100%">Download CSV</button>
+                </div>
+
+                <div class="report-card">
+                    <div class="report-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <div class="report-title">Supplier Performance</div>
+                    <div class="report-desc">Analyze average stock holding and total items supplied by each vendor.</div>
+                    <button id="btnExportSuppliers" class="btn btn-outline" style="width:100%">Download CSV</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modals -->
+    <div id="productModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="productModalTitle">Add Product</h3>
+                <button class="modal-close" style="background:none; border:none; cursor:pointer; color:var(--text-secondary);" onclick="window.closeProductModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form id="productForm" onsubmit="window.handleSaveProduct(event)">
+                <input type="hidden" id="editProductId">
+                
+                <div class="form-group">
+                    <label class="form-label">Product Name</label>
+                    <input type="text" id="pName" class="form-input" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Stock Level</label>
+                        <input type="number" id="pStock" class="form-input" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Reorder Level</label>
+                        <input type="number" id="pReorder" class="form-input" required min="0">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Price (PHP)</label>
+                        <input type="number" id="pPrice" class="form-input" required min="0" step="0.01">
+                    </div>
+                     <div class="form-group">
+                        <label class="form-label">Restock Count</label>
+                        <input type="number" id="pRestockCount" class="form-input" min="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" id="pLocation" class="form-input" placeholder="e.g. Aisle 1, Warehouse B">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Supplier</label>
+                    <input type="text" id="pSupplier" class="form-input">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Next Delivery</label>
+                        <input type="date" id="pDate" class="form-input">
+                    </div>
+                     <div class="form-group">
+                        <label class="form-label">Status Override</label>
+                         <select id="pStatus" class="form-input">
+                            <option value="">Auto-calculate</option>
+                            <option value="On Order">On Order</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="window.closeProductModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Product</button>
+                </div>
+            </form>
+        </div>
     </div>
-
-    <div id="loader">Loading Dashboard...</div>
-
-    <div id="dashboard" class="dashboard-container">
-        <div class="chart-card">
-            <h2>Inventory Status</h2>
-            <canvas id="inventoryStatusChart"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Upcoming Deliveries</h2>
-            <canvas id="upcomingDeliveriesChart"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Inventory by Location</h2>
-            <canvas id="inventoryByLocationChart"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Top 10 Most Stocked Products</h2>
-            <canvas id="top10MostStockedChart"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Top 5 Suppliers with Orders</h2>
-            <canvas id="top5SuppliersChart"></canvas>
-        </div>
-         <div class="chart-card">
-            <h2>Items to Reorder Now</h2>
-            <canvas id="itemsToReorderChart"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Inventory Status by Location</h2>
-            <canvas id="inventoryStatusByLocationChart"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Average Stock from Top Suppliers</h2>
-            <canvas id="avgItemsBySupplierChart"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Items without Delivery Dates</h2>
-            <canvas id="itemsWithoutDeliveryChart"></canvas>
-        </div>
-        <div class="chart-card">
-            <h2>Product Restock Frequency</h2>
-            <div id="restockFrequency" class="table-container"></div>
-        </div>
-    </div>
-
+    
+    <!-- Detail Modal for Charts -->
+    <div id="detailModal" class="modal-overlay"></div>
+    
+    <!-- Toast -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    <script>
+         // Basic helper for modal
+        document.getElementById('detailModal').innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle" class="modal-title">Details</h3>
+                    <button class="modal-close" style="background:none;border:none;cursor:pointer;" onclick="document.getElementById('detailModal').classList.remove('active')">&times;</button>
+                </div>
+                <div id="modalBody" class="modal-body"></div>
+            </div>
+        `;
+    </script>
     <script type="module" src="index.tsx"></script>
 </body>
 </html>
